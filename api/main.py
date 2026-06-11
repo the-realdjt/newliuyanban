@@ -1,18 +1,16 @@
 from flask import Flask, request, jsonify
-# 同域名部署，跨域自动消失，可以删掉CORS，保留也不报错
+import os
+
 app = Flask(__name__)
 
-# 内存存储留言（重启部署会清空，文末附SQLite持久化版本）
 messages = [
     {"name": "Vercel部署测试", "content": "一站式前后端部署成功！"}
 ]
 
-# 获取所有留言
 @app.route('/api/get_messages', methods=['GET'])
 def get_messages():
     return jsonify(messages)
 
-# 新增留言接口
 @app.route('/api/add_message', methods=['POST'])
 def add_message():
     req_data = request.get_json()
@@ -23,8 +21,10 @@ def add_message():
         return jsonify({"status": "success"})
     return jsonify({"status": "fail", "msg": "昵称和留言不能为空"})
 
-# ✅ 关键：Vercel自动托管，必须删除 app.run()
-# if __name__ == "__main__":
-#     app.run(host="0.0.0.0", port=5000)
+# 兼容Vercel Serverless导出（关键修复点）
+def handler(event, context):
+    return app(event, context)
 
-app = app.wsgi_app
+# 本地调试用，线上不会执行
+if __name__ == "__main__":
+    app.run()
