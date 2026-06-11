@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Vercel一体化留言板</title>
+    <style>
+        body { max-width: 600px; margin: 30px auto; font-family: Arial; }
+        input, textarea { width: 100%; padding: 8px; margin: 5px 0; box-sizing: border-box; }
+        button { padding: 10px 20px; background: #42b983; color: white; border: none; border-radius:4px; cursor:pointer; }
+        .msg { border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius:4px; }
+    </style>
+</head>
+<body>
+    <h2>公开共享留言板</h2>
+
+    <input id="name" placeholder="你的昵称">
+    <textarea id="content" placeholder="写下留言..."></textarea>
+    <button onclick="sendMsg()">发布留言</button>
+
+    <h3>全部留言</h3>
+    <div id="msgList"></div>
+
+    <script>
+        window.onload = getMessages;
+        // ！！！重点：不用填写任何外网域名，直接相对路径调用接口
+        const API_PREFIX = "/api";
+
+        function getMessages() {
+            fetch(`${API_PREFIX}/get_messages`)
+                .then(res => res.json())
+                .then(data => {
+                    let html = '';
+                    data.forEach(item => {
+                        html += `<div class="msg"><strong>${item.name}</strong>：${item.content}</div>`;
+                    });
+                    document.getElementById('msgList').innerHTML = html;
+                })
+                .catch(err=>alert("接口加载失败，请刷新重试！"));
+        }
+
+        function sendMsg() {
+            let name = document.getElementById('name').value.trim();
+            let content = document.getElementById('content').value.trim();
+            if(!name||!content){
+                alert("昵称和留言不能为空");
+                return;
+            }
+            fetch(`${API_PREFIX}/add_message`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, content })
+            }).then(res=>res.json()).then(ret=>{
+                if(ret.status==="success"){
+                    document.getElementById('content').value = '';
+                    getMessages();
+                }else{
+                    alert(ret.msg);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
